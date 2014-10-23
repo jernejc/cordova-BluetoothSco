@@ -58,24 +58,6 @@ public class BluetoothSco extends CordovaPlugin {
 						int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1);
 						
 						if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
-
-							audioManager.setMode(AudioManager.MODE_IN_CALL);
-
-							short[] soundData = new short [8000*20];
-							for (int iii = 0; iii < 20*8000; iii++) {
-								soundData[iii] = 32767;
-								iii++;
-								soundData[iii] = -32768;
-							}
-
-							audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL,
-															8000, AudioFormat.CHANNEL_OUT_MONO,
-															AudioFormat.ENCODING_PCM_16BIT, soundData.length
-															* Short.SIZE, AudioTrack.MODE_STATIC);
-							
-							audioTrack.write(soundData, 0, soundData.length);
-							audioTrack.play();
-
 							callbackContext.success();
 							context.unregisterReceiver(this);
 						}
@@ -88,7 +70,23 @@ public class BluetoothSco extends CordovaPlugin {
 					callbackContext.error("Off-call Bluetooth audio not supported on this device.");
 					return;
 				}
+
+				short[] soundData = new short [8000*20];
+				for (int iii = 0; iii < 20*8000; iii++) {
+					soundData[iii] = 32767;
+					iii++;
+					soundData[iii] = -32768;
+				}
+
+				audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL,
+							8000, AudioFormat.CHANNEL_OUT_MONO,
+							AudioFormat.ENCODING_PCM_16BIT, soundData.length
+							* Short.SIZE, AudioTrack.MODE_STATIC);
+
+				audioTrack.write(soundData, 0, soundData.length);
+				audioTrack.play();
 				
+				audioManager.setMode(AudioManager.MODE_IN_CALL);
 				audioManager.setBluetoothScoOn(true);
 				audioManager.startBluetoothSco();
 			}
