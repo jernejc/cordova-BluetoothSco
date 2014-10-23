@@ -15,9 +15,6 @@ import android.media.AudioTrack;
 
 public class BluetoothSco extends CordovaPlugin {
 	
-	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-	
-	@Override
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
 		
 		if(this.cordova.getActivity().isFinishing()) return true;
@@ -42,15 +39,6 @@ public class BluetoothSco extends CordovaPlugin {
 
 			@Override
 			public void run() {
-				if (btAdapter == null) {
-					callbackContext.error("This device does not support Bluetooth");
-					return;
-				}
-				else if (! btAdapter.isEnabled()) {
-					callbackContext.error("Bluetooth is not enabled");
-					return;
-				} 
-
 				cordova.getActivity().registerReceiver(new BroadcastReceiver() {
 
 					@Override
