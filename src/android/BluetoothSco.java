@@ -12,15 +12,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.media.AudioFormat;
 
 public class BluetoothSco extends CordovaPlugin {
+
+	private AudioTrack audioTrack = null;
 	
-	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-	
-	@Override
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-		
-		if(this.cordova.getActivity().isFinishing()) return true;
 		
 		if (action.equals("start")) {
 			this.startScoConnection(callbackContext);
@@ -36,87 +34,43 @@ public class BluetoothSco extends CordovaPlugin {
 	
 
 	private synchronized void startScoConnection(final CallbackContext callbackContext) {
+		
 		final CordovaInterface cordova = this.cordova;
-		
-		Runnable runnable = new Runnable() {
-
-			@Override
-			public void run() {
-				if (btAdapter == null) {
-					callbackContext.error("This device does not support Bluetooth");
-					return;
-				}
-				else if (! btAdapter.isEnabled()) {
-					callbackContext.error("Bluetooth is not enabled");
-					return;
-				} 
-
-				cordova.getActivity().registerReceiver(new BroadcastReceiver() {
-
-					@Override
-					public void onReceive(Context context, Intent intent) {
-						int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1);
-						
-						if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
-							callbackContext.success();
-							context.unregisterReceiver(this);
-						}
-					}
-					
-				}, new IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED));
 				
-				AudioManager audioManager = (AudioManager) cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
-				if (! audioManager.isBluetoothScoAvailableOffCall()) {
-					callbackContext.error("Off-call Bluetooth audio not supported on this device.");
-					return;
-				}
+		AudioManager audioManager = (AudioManager) cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
 
-				short[] soundData = new short [8000*20];
-				for (int iii = 0; iii < 20*8000; iii++) {
-					soundData[iii] = 32767;
-					iii++;
-					soundData[iii] = -32768;
-				}
+		short[] soundData = new short [8000*20];
+		for (int iii = 0; iii < 20*8000; iii++) {
+			soundData[iii] = 32767;
+			iii++;
+			soundData[iii] = -32768;
+		}
 
-				audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL,
-							8000, AudioFormat.CHANNEL_OUT_MONO,
-							AudioFormat.ENCODING_PCM_16BIT, soundData.length
-							* Short.SIZE, AudioTrack.MODE_STATIC);
+		this.audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL,
+					8000, AudioFormat.CHANNEL_OUT_MONO,
+					AudioFormat.ENCODING_PCM_16BIT, soundData.length
+					* Short.SIZE, AudioTrack.MODE_STATIC);
 
-				audioTrack.write(soundData, 0, soundData.length);
-				audioTrack.play();
-				
-				audioManager.setMode(AudioManager.MODE_IN_CALL);
-				audioManager.setBluetoothScoOn(true);
-				audioManager.startBluetoothSco();
-			}
-		};
+		this.audioTrack.write(soundData, 0, soundData.length);
+		this.audioTrack.play();
 		
-		this.cordova.getActivity().runOnUiThread(runnable);
+		audioManager.setMode(AudioManager.MODE_IN_CALL);
+		audioManager.setBluetoothScoOn(true);
+		audioManager.startBluetoothSco();
+
 	}
 	
 	private synchronized void stopScoConnection(final CallbackContext callbackContext) {
 		
 		final CordovaInterface cordova = this.cordova;
-		
-		Runnable runnable = new Runnable() {
+				
+		AudioManager audioManager = (AudioManager) cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
 
-			@Override
-			public void run() {
-				
-				AudioManager audioManager = (AudioManager) cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
-				
-				try {
-					audioManager.stopBluetoothSco();
-					audioManager.setBluetoothScoOn(false);
-					callbackContext.success();
-				} catch (Exception e) {
-					callbackContext.error(e.getMessage());
-				}
-			}
-		};
+		this.audioTrack.stop();
+		this.audioTrack.release();
+		audioManager.stopBluetoothSco();
+		audioManager.setBluetoothScoOn(false);
 		
-		this.cordova.getActivity().runOnUiThread(runnable);
 	}
 
 }
