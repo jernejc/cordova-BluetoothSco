@@ -11,7 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
-
+import android.media.AudioTrack;
 
 public class BluetoothSco extends CordovaPlugin {
 	
@@ -58,7 +58,7 @@ public class BluetoothSco extends CordovaPlugin {
 						int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1);
 						
 						if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
-							// Set mode in call after connected
+
 							audioManager.setMode(AudioManager.MODE_IN_CALL);
 
 							short[] soundData = new short [8000*20];
